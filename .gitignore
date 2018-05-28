@@ -13,3 +13,6 @@ jspm_packages
 
 # yarn
 yarn.lock
+
+._.DS_Store
+.DS_Store
