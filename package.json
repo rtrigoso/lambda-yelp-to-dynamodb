@@ -1,0 +1,17 @@
+{
+  "name": "lambda-get-pizza-business",
+  "version": "0.0.1",
+  "description": "update businesses that serve pizza and updates it a relational database",
+  "main": "handler.js",
+  "author": "ren",
+  "license": "MIT",
+  "private": false,
+  "devDependencies": {
+    "eslint": "^4.19.1",
+    "serverless": "^1.27.3"
+  },
+  "dependencies": {
+    "aws-sdk": "^2.245.1",
+    "yelp-fusion": "^2.0.3"
+  }
+}
