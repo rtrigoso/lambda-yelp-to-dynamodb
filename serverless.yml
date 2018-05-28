@@ -2,7 +2,6 @@ service: aws-nodejs
 
 custom:
   region: 'us-east-1'
-  apiYelp: '052318-yelp'
   dynamodb: 'pizzerias'
 
 provider:
