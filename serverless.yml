@@ -18,6 +18,7 @@ provider:
         - dynamodb:UpdateItem
         - dynamodb:ListTable
         - dynamodb:CreateTable
+        - dynamodb:DescribeTable
       Resource: "arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.DYNAMODB_TABLE}"
 
 functions:
