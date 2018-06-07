@@ -7,6 +7,6 @@ Stores yelp businesses in a dynamodb private for private use
 - you can switch the name of the table on serverless.yml
 
 ### TODO:
-1. Add configuration for cloudwatch scheduled event
+1. ~~Add configuration for cloudwatch scheduled event~~
 2. Create small RDS table for queries or reconfigure the table to have a smarter sort key
 3. Add point system to each business
