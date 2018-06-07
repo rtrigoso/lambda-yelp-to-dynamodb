@@ -6,7 +6,7 @@ custom:
 
 provider:
   name: aws
-  runtime: nodejs6.10
+  runtime: nodejs8.10
   environment:
     YELP_API_KEY: ${opt:yelp}
     DYNAMODB_TABLE: ${self:custom.dynamodb}
