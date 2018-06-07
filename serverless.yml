@@ -22,27 +22,10 @@ provider:
 
 functions:
   getPizzerias:
-    role: CloudwatchEvent_Lambda
     handler: handler.getPizzerias
-
-# resources:
-#   Resources:
-#     MyEventName:
-#       Type: AWS::Events::Rule
-#       Properties:
-#         Description: Scrape pizzerias from yelp
-#         Name: YelpPizzaScrape
-#         ScheduleExpression: "cron(0 0 * * *)"
-#         State: ENABLED
-#         RoleArn:
-#           Fn:GetAtt: 
-#             - "CloudwatchEvent_Lambda"
-#             - "Arn"
-#         Targets:
-#           -
-#             Arn:
-#               Fn::GetAtt:
-#                 - "getPizzerias"
-#                 - "Arn"
-#               Id: "getPizzerias"
-    
+    events:
+      - schedule:
+          name: get-current-pizzas
+          description: 'launch a lambda function to pull all pizza businesses around raleigh and save them into a dynamodb table'
+          rate: cron(0 0 * * ? *)
+          enabled: false
