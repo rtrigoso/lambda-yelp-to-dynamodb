@@ -6,6 +6,141 @@ const yelp = require('yelp-fusion');
 const yClient = yelp.client(process.env.YELP_API_KEY);
 var dynamodb = new AWS.DynamoDB();
 
+const config = [
+  {
+    key: 'name',
+    subKey: false,
+    attrNameKey: '#N',
+    attrNameValue: 'Name',
+    attrValueKey: ':n',
+    type: 'S'
+  },
+  {
+    key: 'alias',
+    subKey: false,
+    attrNameKey: '#A',
+    attrNameValue: 'Alias',
+    attrValueKey: ':a',
+    type: 'S'
+  },
+  {
+    key: 'phone',
+    subKey: false,
+    attrNameKey: '#P',
+    attrNameValue: 'Phone',
+    attrValueKey: ':p',
+    type: 'S'
+  },
+  {
+    key: 'image_url',
+    subKey: false,
+    attrNameKey: '#I',
+    attrNameValue: 'Image',
+    attrValueKey: ':i',
+    type: 'S'
+  },
+  {
+    key: 'location',
+    subKey: 'address1',
+    attrNameKey: '#AD1',
+    attrNameValue: 'Address1',
+    attrValueKey: ':ad1',
+    type: 'S'
+  },
+  {
+    key: 'location',
+    subKey: 'address2',
+    attrNameKey: '#AD2',
+    attrNameValue: 'Address2',
+    attrValueKey: ':ad2',
+    type: 'S'
+  },
+  {
+    key: 'location',
+    subKey: 'city',
+    attrNameKey: '#CI',
+    attrNameValue: 'City',
+    attrValueKey: ':ci',
+    type: 'S'
+  },
+  {
+    key: 'location',
+    subKey: 'state',
+    attrNameKey: '#S',
+    attrNameValue: 'State',
+    attrValueKey: ':s',
+    type: 'S'
+  },
+  {
+    key: 'location',
+    subKey: 'zip_code',
+    attrNameKey: '#Z',
+    attrNameValue: 'Zip',
+    attrValueKey: ':z',
+    type: 'N'
+  },
+  {
+    key: 'coordinates',
+    subKey: 'longitude',
+    attrNameKey: '#LON',
+    attrNameValue: 'Longitude',
+    attrValueKey: ':lon',
+    type: 'N'
+  },
+  {
+    key: 'coordinates',
+    subKey: 'latitude',
+    attrNameKey: '#LAT',
+    attrNameValue: 'Latitude',
+    attrValueKey: ':lat',
+    type: 'N'
+  },
+];
+
+const checkIfNotEmpty = s => {
+  return (s !== null && s !== '');
+};
+
+const buildUpdateExpression = business => {
+  let UpdateExpressionArray = [];
+  let expAttName = {};
+  let expAttVal = {};
+
+  for (let i = 0; i < config.length; i++) 
+  {
+    const e = config[i];
+    let dataValue = business[e.key];
+
+    if(e.subKey !== false)
+    {
+      dataValue = business[e.key][e.subKey];
+    }
+
+    if(checkIfNotEmpty(dataValue))
+    {
+      let valKey = e.attrValueKey; 
+      let nameKey = e.attrNameKey; 
+      let nameVal = e.attrNameValue; 
+      let valType = e.type; 
+
+      expAttName[`${nameKey}`] = nameVal;      
+      expAttVal[`${valKey}`] = {};
+      expAttVal[`${valKey}`][valType] = `${dataValue}`;
+      UpdateExpressionArray.push(`${nameKey} = ${valKey}`);
+    } 
+  }
+
+  return {
+    ExpressionAttributeNames: expAttName,
+    ExpressionAttributeValues: expAttVal,
+    Key: {'Id': {S: business.id }}, 
+    ReturnValues: 'UPDATED_NEW', 
+    TableName: process.env.DYNAMODB_TABLE,
+    UpdateExpression: `SET ${UpdateExpressionArray.join(', ')}`
+  };
+
+};
+
 module.exports.getPizzerias = async (event, context, callback) => {
   const failed = e => {
     const response = {
@@ -52,50 +187,14 @@ module.exports.getPizzerias = async (event, context, callback) => {
   }
 
   for(let i = 0; i < pizzaBusinesses.length; i++) {
-    let business = pizzaBusinesses[i];
-    let business_closed = business.is_closed ? '1' : '0';
-    let business_address = `${business.location.address1} ${business.location.address2}`;
-    let business_lon = `${business.coordinates.longitude}`;
-    let business_lat = `${business.coordinates.latitude}`;
-    let business_zip = `${business.location.zip_code}`;
-
-    await dynamodb.updateItem({
-      ExpressionAttributeNames: {
-        '#A': 'Alias',
-        '#AD': 'Address1', 
-        '#CI': 'City', 
-        '#C': 'Closed', 
-        '#CO': 'Country', 
-        '#IM': 'ImageURL',
-        '#LON': 'Longitude',
-        '#LAT': 'Latitude',
-        '#N': 'Name',
-        '#P': 'Phone',
-        '#S': 'State',
-        '#Z': 'ZipCode'
-      }, 
-      ExpressionAttributeValues: {
-        ':a': {S: business.alias}, 
-        ':ad': {S: business_address},
-        ':ci': {S: business.location.city},
-        ':co': {S: business.location.country},
-        ':c': {N: business_closed},
-        ':im': {S: business.image_url},
-        ':lon': {N: business_lon},
-        ':lat': {N: business_lat},
-        ':n': {S: business.name},
-        ':p': {S: business.phone},
-        ':s': {S: business.location.state},
-        ':z': {N: business_zip}
-      }, 
-      Key: {'Id': {S: business.id }}, 
-      ReturnValues: 'UPDATED_NEW', 
-      TableName: process.env.DYNAMODB_TABLE, 
-      UpdateExpression: 'SET #A = :a, #AD = :ad, #CI = :ci, #C = :c, #CO = :co, #IM = :im, #LON = :lon, #LAT = :lat, #N = :n, #P = :p, #S = :s, #Z = :z'
-    }).promise().catch(err => {
-      failed(err);
-      return false;
-    });
+    if(!pizzaBusinesses[i].is_closed )
+    {
+      let updateObj = buildUpdateExpression(pizzaBusinesses[i]);
+      await dynamodb.updateItem(updateObj).promise().catch(err => {
+        failed(err);
+        return false;
+      });
+    }
   }
 
   const response = {
